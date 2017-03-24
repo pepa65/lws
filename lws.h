@@ -1,31 +1,7 @@
-#ifndef GLOBALVAR_H_INCLUDED
-#define GLOBALVAR_H_INCLUDED
-#include<stdio.h>
-
-#define SELF "lws"
-#define DEFAULTIP "localhost"
-#define DEFAULTPORT "8090"
-#define DEFAULTBACK "10"
-#define DEFAULTDIR "."
-#define DEFAULTLOG SELF ".log"
-#define MAXBUFF 102400
-#define MAXPATH 511
-
-char buffer[MAXBUFF + 1];
-char* host = NULL;
-char* port = NULL;
-char* backlog = NULL;
-char* rootdir = NULL;
-char* logfile = NULL;
-unsigned char isdaemon = 1;
-FILE* logfp;
-
-#endif // GLOBALVAR_H_INCLUDED
-
-#ifndef HEADFILE_H_INCLUDED
-#define HEADFILE_H_INCLUDED
+// lws.h
 
 #include <stdio.h>
+#include <stdarg.h>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -38,62 +14,77 @@ FILE* logfp;
 #include <getopt.h>
 #include <string.h>
 #include <time.h>
-
-//#define MYDEBUG
-
-#ifndef ERRORS_H_INCLUDED
-#define ERRORS_H_INCLUDED
 #include <errno.h>
-#define errmsgprt(msg){ perror(msg); abort();}
-#define errmsgwrt(msg){ fputs(msg,logfp); fputs(strerror(errno),logfp); fflush(logfp); abort();}
-extern void puterrmsg(char* msg);
-#endif // ERRORS_H_INCLUDED
 
-#ifndef INFOMSG_H_INCLUDED
-#define INFOMSG_H_INCLUDED
-#define infomsgprt(msg) { fputs(msg,stdout);}
-#define infomsgwrt(msg) { fputs(msg,logfp); fflush(logfp);}
-extern void putinfomsg(char* msg);
-#endif // INFOMSG_H_INCLUDED
+#define SELF "lws"
+#define TAGLINE " - Simple http server listing directories and downloading files"
+#define URL "//github.com/pepa65/lws"
+#define DEFAULT_ADDRESS "localhost"
+#define DEFAULT_PORT "8090"
+#define DEFAULT_BACKLOG "10"
+#define DEFAULT_ROOTDIR "."
+#define DEFAULT_LOGFILE SELF ".log"
+#define DEFAULT_DEBUG 0
 
-#ifndef MEMMANAGER_H_INCLUDED
-#define MEMMANAGER_H_INCLUDED
-#include <string.h>
-extern void allocMemory(char** dest, char* src, size_t len);
-#endif // MEMMANAGER_H_INCLUDED
+#define MAXBUFF 102400
+#define MAXPATH 511
 
-#endif // HEADFILE_H_INCLUDED
+char buffer[MAXBUFF + 1];
+char* address = DEFAULT_ADDRESS;
+char* port = DEFAULT_PORT;
+char* backlog = DEFAULT_BACKLOG;
+char* rootdir = DEFAULT_ROOTDIR;
+char* logfile = DEFAULT_LOGFILE;
+unsigned char isdaemon = 1;
+unsigned char debug = DEFAULT_DEBUG;
+unsigned char p80;
+FILE* l;
 
-#ifndef MAJORWORK_H_INCLUDED
-#define MAJORWORK_H_INCLUDED
+#define HTTP "HTTP/1.1 200 OK\r\nServer: " SELF "\r\n"
+#define CLOSE "Connection: close\r\n\r\n"
+#define DOWNLOAD "Connection: keep-alive\r\n\
+Content-type: application/*\r\n\
+Content-Length: %d\r\n\r\n"
 
-#include<stdio.h>
-// get the upper directory of curpath and store in upperpath
-extern int dirup(const char* curpath, char* upperpath);
+#define CSS "body{font-family:Arial,sans-serif; background-color:#eee;} \
+.foot{font-size:80%%; color:#666; margin: 4px 0 600px;} \
+a,a:active{text-decoration:none; color:#116;} \
+a:visited{color:#416;} \
+a:hover,a:focus{text-decoration:none;} \
+h1{color:#000; font-size:160%%;} \
+h2{margin-bottom:12px;} \
+h4{color:#333;} \
+.s,.s{text-align:right;} \
+.list{background-color:#fff; border-top:1px solid #666; \
+ border-bottom:1px solid #666; padding:8px 12px 12px 12px;} \
+th,td{font-size:80%%; text-align:left; overflow:hidden;} \
+th{padding-right:14px; padding-bottom:3px;} \
+td{padding-right:14px; padding-left:5px;} \
+td a{display:block; margin:-10em; padding:10em;} \
+td a:hover{background-color:#ffd;} \
+.i{font-style:italic;} \
+.b{font-weight:bold;} \
+.top{background-color:#bbb; font-style:italic;} \
+.dark{background-color:#ddd;} \
+.light{background-color:#fff;} \
+.error{font-size:200%%; color:#f00;} \
+.type{font-size:70%%;} \
+.date{font:70%% monospace;} \
+.size{font:80%% monospace;} \
+.root{color:#666;}"
 
-// listdir: list files under path realpath
-// cskfile = client sock file
-// realpath is a absolute path in the system
-// path is a absolute path in the webserver
-extern void listdir(FILE* cskfile, char* path, char* realpath);
+#define HTML "<html><head><meta http-equiv=\"pragma\" content=\"no-cache\" />\
+<meta http-equiv=\"Content-Type\" content=\"text/html;charset=utf-8\">\
+<style>" CSS "</style><title>" SELF
 
-// download file according to realpath
-extern void getfile(FILE *cskfile, char* realpath);
+#define BODY2 "</title></head>\n<body><a href=\"%s\" title=\"%s\"><h1>" SELF " "
 
-// response to requests from clients
-extern void serverResponse(FILE* cskfile, char* path);
+#define DIV "</h1></a><div class=\"list\">\n"
 
-// --host|-H --port|-P --back|-B --dir|-D --log|-L --daemon
-extern void getoption(int argc, char** argv);
+#define FOOTER "</div><a href=\"" URL "\" title=\"" SELF \
+" github page\" target=\"_blank\"><p class=\"foot\">" SELF TAGLINE "</p></a></body></html>"
 
-// get the config infomation from the command line input
-extern void myinit(int argc, char** argv);
-extern void uri_decode(char *path);
-extern void run();
-
-// gnulib functions
 extern int isdigit(int c);
 extern int isxdigit(int c);
 extern int tolower(int c);
-
-#endif // MAJORWORK_H_INCLUDED
+extern char* get_current_dir_name(void);
