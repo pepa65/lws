@@ -12,45 +12,31 @@ void msg(int s, const char* format, ...) {
 	if(s == 2) fprintf(lfp, "Error: ");
 	if(s == 3 && debug) fprintf(lfp, "Debug: ");
 	if(s == 4) fprintf(lfp, "Exit: ");
-	if(s != 3 || debug) vfprintf(lfp, format, args);
-	if(s != 3 || debug) fprintf(lfp, "\n");
+	if(s != 3 || debug) {
+		vfprintf(lfp, format, args);
+		if(s) fprintf(lfp, "\n");
+	}
 	if(s == 4) exit(EXIT_FAILURE);
 }
 
 // convert %hh to characters
-void uri_decode(char *path) {
-	int len = strlen(path);
-	if(!len) return;
-	msg(3, "uri:%s",path);
-	char buf[MAXPATH+1];
-	bzero(buf, MAXPATH+1);
-	int high, low;
-#define HEXTOI(x) (isdigit(x) ? x-'0' : x-'W')
-	int ind = 0;
-	int i;
-	for(i = 0; i < len; i++) {
-		switch(path[i]) {
-		case '%':
-			if(isxdigit(((unsigned char*)path)[i+1])
-					&& isxdigit(((unsigned char*)path)[i+2])) {
-				high = tolower(((unsigned char*)path)[i+1]);
-				low = tolower(((unsigned char*)path)[i+2]);
-			}
-			buf[ind++] = (HEXTOI(high) << 4) | HEXTOI(low);
-			i += 2;
-			break;
-		default:
-			buf[ind++] = path[i];
-			break;
-		}
+void uri_decode(char* string) {
+	if (string == NULL) return;
+	msg(3, "encoded:%s", string);
+	char* i = string;
+	char hex[3];
+	hex[2] = 0;
+
+	while ((string=strstr(string,"%"))!=NULL) {
+		hex[0] = string[1];
+		hex[1] = string[2];
+		memmove(string+1, string+3, strlen(string+3)+1);
+		string[0] = strtol(hex, NULL, 16);
+		string++;
 	}
-	buf[ind++] = 0;
-	strncpy(path, buf, ind);
-	path[ind+1] = 0;
-	msg(3, "path:%s",path);
 }
 
-// encoding characters in name to %hh in encoded (malloc, pass len_malloc!)
+// encoding characters in name to %hh in encoded (malloc, pass len_alloc!)
 static void href_encode(char* name, char* encoded, int len_alloc) {
 	encoded[0]=0;
 	if(name == NULL) return;
@@ -79,39 +65,39 @@ static void href_encode(char* name, char* encoded, int len_alloc) {
 
 // encoding characters in name to &code; in encoded (malloc, pass len_alloc!)
 static void html_encode(char* name, char* encoded, int len_alloc) {
-    encoded[0] = 0;
-    if(name == NULL) return;
-    size_t len = 0;
-    size_t inc;
-    char* code;
-    char ni[2] = "X";
+	encoded[0] = 0;
+	if(name == NULL) return;
+	size_t len = 0;
+	size_t inc;
+	char* code;
+	char ni[2] = "X";
 
-    for(size_t i = 0; i < strlen(name); i++) {
-        ni[0] = name[i];
-        code = ni;
-        inc = 1;
-        switch(name[i]) {
-        case '&':
-            code = "&amp;";
-            inc = 5;
-            break;
-        case '<':
-            code = "&lt;";
-            inc = 4;
-            break;
-        case '>':
-            code = "&gt;";
-            inc = 4;
-            break;
-        case ' ':
-            code = "&nbsp;";
-            inc = 6;
-            break;
-        }
-        if(len+inc >= len_alloc) return;
-        strcpy(encoded+len, code);
-        len += inc;
-    }
+	for(size_t i = 0; i < strlen(name); i++) {
+		ni[0] = name[i];
+		code = ni;
+		inc = 1;
+		switch(name[i]) {
+		case '&':
+			code = "&amp;";
+			inc = 5;
+			break;
+		case '<':
+			code = "&lt;";
+			inc = 4;
+			break;
+		case '>':
+			code = "&gt;";
+			inc = 4;
+			break;
+		case ' ':
+			code = "&nbsp;";
+			inc = 6;
+			break;
+		}
+		if(len+inc >= len_alloc) return;
+		strcpy(encoded+len, code);
+		len += inc;
+	}
 	msg(3, "name:%s\nhtml:%s\n", name, encoded);
 }
 
@@ -156,7 +142,7 @@ void listdir(FILE* cskfile, char* path, char* fspath) {
 		fprintf(cskfile, HTTP CLOSE HTML " error" BODY2 " error" DIV
 				"<p class=\"error\">Error %d - %s</p>" FOOTER,
 				address, port, errno, strerror(errno));
-		msg(3, "error %d - %s", errno, strerror(errno));
+		msg(3, "error:%d - %s", errno, strerror(errno));
 		return;
 	}
 	else fprintf(cskfile, HTTP CLOSE HTML BODY2 DIV
@@ -214,7 +200,7 @@ void listdir(FILE* cskfile, char* path, char* fspath) {
 }
 
 // download file according to fspath
-void getfile(FILE *cskfile, char* fspath) {
+void getfile(FILE* cskfile, char* fspath) {
 	int fd = open(fspath, O_RDONLY);
 	int len = lseek(fd, 0, SEEK_END);
 	char* buf = (char*)malloc(len);
@@ -234,12 +220,12 @@ void serverResponse(FILE* cskfile, char* path) {
 	fspath = (char*)malloc(len+1);
 	sprintf(fspath, "%s%s", rootdir, path);
 	fspath[len+1] = 0;
-	msg(3, "fspath: %s", fspath);
+	msg(3, "fspath:%s", fspath);
 	if(stat(fspath, &filestat)) {
 		fprintf(cskfile, HTTP CLOSE HTML " error" BODY2 " error" DIV
 				"<p class=\"error\">Error %d - %s</p>%s" FOOTER,
 				address, port, errno, strerror(errno), fspath);
-		msg(3, "error %d - %s: %s", errno, strerror(errno), fspath);
+		msg(3, "error:%d - %s: %s", errno, strerror(errno), fspath);
 	}
 	else {
 		// regular file to download
@@ -251,7 +237,7 @@ void serverResponse(FILE* cskfile, char* path) {
 			fprintf(cskfile, HTTP CLOSE HTML " denied" BODY2 " denied" DIV
 					"<p class=\"error\">Path inaccessible</p>%s" FOOTER,
 					address, port, path);
-			msg(3, "denied: %s", path);
+			msg(3, "denied:%s", path);
 		}
 	}
 	free(fspath);
@@ -322,7 +308,7 @@ void getoption(int argc, char** argv) {
 			else if(c == 'b') backlog = buf;
 			else if(c == 'l') logfile = buf;
 			else if(c == 'r') rootdir = buf;
-			msg(3, "%c:%s", c, optarg);
+			msg(3, "option:%c:%s", c, optarg);
 		}
 	}
 	if(!log_set) logfile = NULL;
@@ -348,14 +334,14 @@ void run() {
 	}
 
 	if(logfile) {
-		msg(3, "logfile %s in use, no more stdout", logfile);
+		msg(1, "logfile %s in use, no more stdout", logfile);
 		lfp = fopen(logfile, "a+");
 		if(!lfp) msg(4, "could not fork as daemon");
 	}
 	time_t t;
 	time(&t);
 	msg(0, "\ndate: %s%s serving %s on http://%s:%s\n"
-			"backlog: %s, log: %s, debug: %s, pid: %d %s", ctime(&t), SELF,
+			"backlog: %s, log: %s, debug: %s, pid: %d %s\n", ctime(&t), SELF,
 			strcmp(rootdir, ".") ? rootdir : get_current_dir_name(),
 			address, port, backlog, logfile ? logfile : "none", debug ? "on" : "off",
 			pid, isdaemon ? "(daemon)" : "(foreground)");
@@ -386,18 +372,18 @@ void run() {
 		msg(3, "2addrlen:%d",addrlen);
 		sprintf(buffer, "connection from %s:%d",
 				inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
-		msg(3, "%s", buffer);
+		msg(3, "buffer:%s", buffer);
 		if(!fork()) {
 			int len = recv(new_fd, buffer, MAXBUFF, 0);
 			if(len > 0) {
-				msg(3, "length %d: %s", len, buffer);
-				FILE *fp = fdopen(new_fd, "w");
+				msg(3, "length:%d: %s", len, buffer);
+				FILE* fp = fdopen(new_fd, "w");
 				if(!fp) msg(4, "can't open file for writing");
 				char reqstr[MAXPATH+1];
 				sscanf(buffer, "GET %s HTTP", reqstr);
 				if(reqstr[strlen(reqstr)-1] == '/') reqstr[strlen(reqstr)-1] = 0;
 				uri_decode(reqstr);
-				msg(3, "requesting %s", reqstr);
+				msg(3, "requesting:%s", reqstr);
 				serverResponse(fp, reqstr);
 				fclose(fp);
 			}
@@ -410,7 +396,7 @@ void run() {
 	close(sock_fd);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
 	getoption(argc, argv);
 	run();
 	return 0;

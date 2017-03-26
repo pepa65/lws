@@ -1,4 +1,4 @@
-all: lws.c lws.h
+all:
 	gcc -o lws lws.c
 
 install:

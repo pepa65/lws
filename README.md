@@ -15,3 +15,5 @@ USAGE: lws [option [argument]]...
    -f, --foreground           no forking to the background
    -h, --help                 display this help text
 ```
+
+Based on https://github.com/gorllen/LightWebServer
