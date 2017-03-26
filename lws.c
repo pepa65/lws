@@ -338,10 +338,12 @@ void run() {
 	struct sockaddr_in client_addr;
 	int sock_fd;
 	socklen_t addrlen;
+	pid_t pid = getpid();
 
 	// abort the main process to make child process a daemon
 	if(isdaemon) {
-		if(fork()) exit(EXIT_SUCCESS);
+		if(pid = fork()) exit(EXIT_SUCCESS);
+		else msg(4, "fork failed");
 		signal(SIGTERM, catch_exit);
 	}
 
@@ -356,7 +358,7 @@ void run() {
 			"backlog: %s, log: %s, debug: %s, pid: %d %s", ctime(&t), SELF,
 			strcmp(rootdir, ".") ? rootdir : get_current_dir_name(),
 			address, port, backlog, logfile ? logfile : "none", debug ? "on" : "off",
-			getpid(), isdaemon ? "(daemon)" : "(foreground)");
+			pid, isdaemon ? "(daemon)" : "(foreground)");
 
 	sock_fd = socket(PF_INET, SOCK_STREAM, 0);
 	if(sock_fd < 0) msg(4, "can't open socket");
