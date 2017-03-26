@@ -38,7 +38,7 @@ char* logfile = DEFAULT_LOGFILE;
 unsigned char isdaemon = 1;
 unsigned char debug = DEFAULT_DEBUG;
 unsigned char p80;
-FILE* l;
+FILE* lfp;
 
 #define HTTP "HTTP/1.1 200 OK\r\nServer: " SELF "\r\n"
 #define CLOSE "Connection: close\r\n\r\n"
@@ -57,6 +57,7 @@ h4{color:#333;} \
 .s,.s{text-align:right;} \
 .list{background-color:#fff; border-top:1px solid #666; \
  border-bottom:1px solid #666; padding:8px 12px 12px 12px;} \
+table{width:100%%;} \
 th,td{font-size:80%%; text-align:left; overflow:hidden;} \
 th{padding-right:14px; padding-bottom:3px;} \
 td{padding-right:14px; padding-left:5px;} \
@@ -68,16 +69,16 @@ td a:hover{background-color:#ffd;} \
 .dark{background-color:#ddd;} \
 .light{background-color:#fff;} \
 .error{font-size:200%%; color:#f00;} \
-.type{font-size:70%%;} \
-.date{font:70%% monospace;} \
-.size{font:80%% monospace;} \
+.type{font-size:70%%; width:2%%;} \
+.size{font:80%% monospace; width:13%%;} \
+.date{font:70%% monospace; width:30%%;} \
 .root{color:#666;}"
 
 #define HTML "<html><head><meta http-equiv=\"pragma\" content=\"no-cache\" />\
 <meta http-equiv=\"Content-Type\" content=\"text/html;charset=utf-8\">\
 <style>" CSS "</style><title>" SELF
 
-#define BODY2 "</title></head>\n<body><a href=\"%s\" title=\"%s\"><h1>" SELF " "
+#define BODY2 "</title></head>\n<body><a href=\"//%s:%s\" title=\"root directory\"><h1>" SELF
 
 #define DIV "</h1></a><div class=\"list\">\n"
 
