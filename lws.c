@@ -56,7 +56,6 @@ static void href_encode(char* name, char* encoded, int len_alloc) {
 	if(name == NULL) return;
 
 	char* code = " \"#&\\<?:%>";
-	//char *code=" !\'()[]|*+,;=@\"#&\\<?:%>";
 	size_t len_name = strlen(name);
 	size_t len_code = strlen(code);
 	size_t len_encoded = 0;
@@ -218,7 +217,6 @@ void listdir(FILE* cskfile, char* path, char* fspath) {
 void getfile(FILE *cskfile, char* fspath) {
 	int fd = open(fspath, O_RDONLY);
 	int len = lseek(fd, 0, SEEK_END);
-//	char* buf = (char*)malloc(len+1);
 	char* buf = (char*)malloc(len);
 	lseek(fd, 0, SEEK_SET);
 	read(fd, buf, len);
@@ -262,6 +260,7 @@ void serverResponse(FILE* cskfile, char* path) {
 
 void helptext() {
 	msg(0, " %s%s\n"
+			" Homepage: http:%s\n\n"
 			" USAGE: %s [option [argument]]...\n"
 			" Options:\n"
 			"   -a, --address <address>    address to listen on (default %s)\n"
@@ -272,16 +271,18 @@ void helptext() {
 			"   -d, --debug                extra output for debugging (default %s)\n"
 			"   -f, --foreground           no forking to the background\n"
 			"   -h, --help                 display this help text\n",
-			SELF, TAGLINE, SELF, DEFAULT_ADDRESS, DEFAULT_PORT, DEFAULT_BACKLOG,
+			SELF, TAGLINE, URL, SELF, DEFAULT_ADDRESS, DEFAULT_PORT, DEFAULT_BACKLOG,
 			strcmp(DEFAULT_ROOTDIR, ".") ? DEFAULT_ROOTDIR : "current",
 			DEFAULT_LOGFILE, DEFAULT_DEBUG ? "on" : "off");
 	exit(EXIT_SUCCESS);
 }
 
+// get the config infomation from the command line input
 void getoption(int argc, char** argv) {
 	int c;
 	char* buf;
 	opterr = 0; // don't output errors
+	lfp = stdout;
 	struct option long_opts[] = {
 		// option-name, has-argument, flag, return-value
 		{"address", required_argument, 0, 'a'},
@@ -297,6 +298,7 @@ void getoption(int argc, char** argv) {
 	char* short_opts = ":a:p:b:r:l::dfh";
 	size_t len;
 	unsigned char log_set = 0;
+
 	while(1) {
 		c = getopt_long(argc, argv, short_opts, long_opts, 0);
 		if(c == -1) break; // end of commandline processing
@@ -327,10 +329,22 @@ void getoption(int argc, char** argv) {
 	p80 = atoi(port) == 80;
 }
 
-// get the config infomation from the command line input
-void myinit(int argc, char** argv) {
-	lfp = stdout;
-	getoption(argc, argv);
+void catch_exit(int signo) {
+	msg(4, "%s killed, signal %d", SELF, signo);
+}
+
+void run() {
+	struct sockaddr_in addr;
+	struct sockaddr_in client_addr;
+	int sock_fd;
+	socklen_t addrlen;
+
+	// abort the main process to make child process a daemon
+	if(isdaemon) {
+		if(fork()) exit(EXIT_SUCCESS);
+		signal(SIGTERM, catch_exit);
+	}
+
 	if(logfile) {
 		msg(3, "logfile %s in use, no more stdout", logfile);
 		lfp = fopen(logfile, "a+");
@@ -343,21 +357,7 @@ void myinit(int argc, char** argv) {
 			strcmp(rootdir, ".") ? rootdir : get_current_dir_name(),
 			address, port, backlog, logfile ? logfile : "none", debug ? "on" : "off",
 			getpid(), isdaemon ? "(daemon)" : "(foreground)");
-}
 
-void run() {
-	struct sockaddr_in addr;
-	struct sockaddr_in client_addr;
-	int sock_fd;
-	socklen_t addrlen;
-
-	// abort the main process to make child process a daemon
-	if(isdaemon) {
-		if(fork()) exit(EXIT_SUCCESS);
-		if(fork()) exit(EXIT_SUCCESS);
-	}
-	// ignore the SIGCHLD signal explicitly to avoid zombie
-	signal(SIGCHLD, SIG_IGN);
 	sock_fd = socket(PF_INET, SOCK_STREAM, 0);
 	if(sock_fd < 0) msg(4, "can't open socket");
 
@@ -373,7 +373,7 @@ void run() {
 	if(bind(sock_fd, (struct sockaddr*)&addr, addrlen) < 0)
 		msg(4, "can't bind on %s:%s", address, port);
 	if(listen(sock_fd, atoi(backlog)) < 0)
-		msg(4, "can't listen on fd %d", sock_fd);
+		msg(4, "can't listen on socket %d, error %d - %s", sock_fd, errno, strerror(errno));
 
 	while(1) {
 		int new_fd;
@@ -409,7 +409,7 @@ void run() {
 }
 
 int main(int argc, char **argv) {
-	myinit(argc, argv);
+	getoption(argc, argv);
 	run();
 	return 0;
 }
