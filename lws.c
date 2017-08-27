@@ -1,4 +1,4 @@
-// lws.c
+ // lws.c
 
 #include "lws.h"
 
@@ -324,15 +324,12 @@ void run() {
 	struct sockaddr_in client_addr;
 	int sock_fd;
 	socklen_t addrlen;
-	pid_t pid = getpid();
 
-	// abort the main process to make child process a daemon
+	// abort the main process to make child process a daemon if not in foreground
 	if(isdaemon) {
-		if(pid = fork()) exit(EXIT_SUCCESS);
-		else msg(4, "fork failed");
-		signal(SIGTERM, catch_exit);
+		if(fork()) exit(EXIT_SUCCESS);
+		else signal(SIGTERM, catch_exit);
 	}
-
 	if(logfile) {
 		msg(1, "logfile %s in use, no more stdout", logfile);
 		lfp = fopen(logfile, "a+");
@@ -340,11 +337,11 @@ void run() {
 	}
 	time_t t;
 	time(&t);
-	msg(0, "\ndate: %s%s serving %s on http://%s:%s\n"
+	msg(0, "date: %s%s serving %s on http://%s:%s\n"
 			"backlog: %s, log: %s, debug: %s, pid: %d %s\n", ctime(&t), SELF,
 			strcmp(rootdir, ".") ? rootdir : get_current_dir_name(),
 			address, port, backlog, logfile ? logfile : "none", debug ? "on" : "off",
-			pid, isdaemon ? "(daemon)" : "(foreground)");
+			getpid(), isdaemon ? "(daemon)" : "(foreground)");
 
 	sock_fd = socket(PF_INET, SOCK_STREAM, 0);
 	if(sock_fd < 0) msg(4, "can't open socket");
