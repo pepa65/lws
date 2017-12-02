@@ -40,7 +40,7 @@ unsigned char debug = DEFAULT_DEBUG;
 unsigned char p80;
 FILE* lfp;
 
-#define HTTP "HTTP/1.1 200 OK\r\nServer: " SELF "\r\n"
+#define PROT "HTTP/1.1 200 OK\r\nServer: " SELF "\r\n"
 #define CLOSE "Connection: close\r\n\r\n"
 #define DOWNLOAD "Connection: keep-alive\r\n\
 Content-type: application/*\r\n\
@@ -54,6 +54,7 @@ a:hover,a:focus{text-decoration:none;} \
 h1{color:#000; font-size:160%%;} \
 h2{margin-bottom:12px;} \
 h4{color:#333;} \
+.g{color:#666} \
 .s,.s{text-align:right;} \
 .list{background-color:#fff; border-top:1px solid #666; \
  border-bottom:1px solid #666; padding:8px 12px 12px 12px;} \
@@ -63,8 +64,8 @@ th{padding-right:14px; padding-bottom:3px;} \
 td{padding-right:14px; padding-left:5px;} \
 td a{display:block; margin:-10em; padding:10em;} \
 td a:hover{background-color:#ffd;} \
-.i{font-style:italic;} \
 .b{font-weight:bold;} \
+.i{font-style:italic;} \
 .top{background-color:#bbb; font-style:italic;} \
 .dark{background-color:#ddd;} \
 .light{background-color:#fff;} \
@@ -80,7 +81,7 @@ td a:hover{background-color:#ffd;} \
 
 #define BODY2 "</title></head>\n<body><a href=\"//%s:%s\" title=\"root directory\"><h1>" SELF
 
-#define DIV "</h1></a><div class=\"list\">\n"
+#define DIV1 " <span class=\"g\">%s</span></h1></a><div class=\"list\">\n"
 
 #define FOOTER "</div><a href=\"" URL "\" title=\"" SELF \
 " github page\" target=\"_blank\"><p class=\"foot\">" SELF TAGLINE "</p></a></body></html>"

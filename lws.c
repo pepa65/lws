@@ -139,16 +139,16 @@ void listdir(FILE* cskfile, char* path, char* fspath) {
 	char* href=malloc(MAXBUFF);
 	char* html=malloc(MAXBUFF);
 	if(!dir) {
-		fprintf(cskfile, HTTP CLOSE HTML " error" BODY2 " error" DIV
+		fprintf(cskfile, PROT CLOSE HTML " error" BODY2 " error" DIV1
 				"<p class=\"error\">Error %d - %s</p>" FOOTER,
-				address, port, errno, strerror(errno));
+				address, port, "", errno, strerror(errno));
 		msg(3, "error:%d - %s", errno, strerror(errno));
 		return;
 	}
-	else fprintf(cskfile, HTTP CLOSE HTML BODY2 DIV
+	else fprintf(cskfile, PROT CLOSE HTML BODY2 DIV1
 			"<table cols=\"4\"><tr class=\"top\">"
 			"<td>type</td><td>name</td><td>size</td><td>modified</td></tr>\n",
-			address, port);
+			address, port, path);
 	while((dent = readdir(dir)) != NULL) {
 		if(strcmp(path, "/") == 0) sprintf(filename, "/%s", dent->d_name);
 		else {
@@ -207,7 +207,7 @@ void getfile(FILE* cskfile, char* fspath) {
 	lseek(fd, 0, SEEK_SET);
 	read(fd, buf, len);
 	close(fd);
-	fprintf(cskfile, HTTP DOWNLOAD, len);
+	fprintf(cskfile, PROT DOWNLOAD, len);
 	fwrite(buf, len, 1, cskfile);
 	free(buf);
 }
@@ -222,9 +222,9 @@ void serverResponse(FILE* cskfile, char* path) {
 	fspath[len+1] = 0;
 	msg(3, "fspath:%s", fspath);
 	if(stat(fspath, &filestat)) {
-		fprintf(cskfile, HTTP CLOSE HTML " error" BODY2 " error" DIV
+		fprintf(cskfile, PROT CLOSE HTML " error" BODY2 " error" DIV1
 				"<p class=\"error\">Error %d - %s</p>%s" FOOTER,
-				address, port, errno, strerror(errno), fspath);
+				address, port, "", errno, strerror(errno), fspath);
 		msg(3, "error:%d - %s: %s", errno, strerror(errno), fspath);
 	}
 	else {
@@ -234,9 +234,9 @@ void serverResponse(FILE* cskfile, char* path) {
 		else if(S_ISDIR(filestat.st_mode)) listdir(cskfile, path, fspath);
 		// neither file nor directory
 		else {
-			fprintf(cskfile, HTTP CLOSE HTML " denied" BODY2 " denied" DIV
+			fprintf(cskfile, PROT CLOSE HTML " denied" BODY2 " denied" DIV1
 					"<p class=\"error\">Path inaccessible</p>%s" FOOTER,
-					address, port, path);
+					address, port, "", path);
 			msg(3, "denied:%s", path);
 		}
 	}
@@ -256,6 +256,7 @@ void helptext() {
 			"   -l, --logfile [<logfile>]  logfile location (default %s)\n"
 			"   -d, --debug                extra output for debugging (default %s)\n"
 			"   -f, --foreground           no forking to the background\n"
+			"   -k, --killall              kill all running instances\n"
 			"   -h, --help                 display this help text\n",
 			SELF, TAGLINE, URL, SELF, DEFAULT_ADDRESS, DEFAULT_PORT, DEFAULT_BACKLOG,
 			strcmp(DEFAULT_ROOTDIR, ".") ? DEFAULT_ROOTDIR : "current",
@@ -278,10 +279,11 @@ void getoption(int argc, char** argv) {
 		{"logfile", optional_argument, 0, 'l'},
 		{"debug", no_argument, 0, 'd'},
 		{"foreground", no_argument, 0, 'f'},
+		{"killall", no_argument, 0, 'k'},
 		{"help", no_argument, 0, 'h'},
 		{0, 0, 0, 0}
 	};
-	char* short_opts = ":a:p:b:r:l::dfh";
+	char* short_opts = ":a:p:b:r:l::dfkh";
 	size_t len;
 	unsigned char log_set = 0;
 
@@ -292,6 +294,7 @@ void getoption(int argc, char** argv) {
 		if(c == 0 || c == '?') msg(4, "unknown commandline option: %c", optopt);
 		if(c == 'd') { debug = 1; continue;}
 		if(c == 'f') { isdaemon = 0; continue;}
+		if(c == 'k') { system("killall " SELF " 2>/dev/null"); exit(EXIT_SUCCESS);}
 		if(c == 'h') { helptext(); continue;}
 		if(c == 'l') {
 			log_set = 1;
@@ -337,10 +340,10 @@ void run() {
 	}
 	time_t t;
 	time(&t);
-	msg(0, "date: %s%s serving %s on http://%s:%s\n"
+	msg(0, "date: %s%s serving %s on http://%s:%s  (kill with: %s -k)\n"
 			"backlog: %s, log: %s, debug: %s, pid: %d %s\n", ctime(&t), SELF,
-			strcmp(rootdir, ".") ? rootdir : get_current_dir_name(),
-			address, port, backlog, logfile ? logfile : "none", debug ? "on" : "off",
+			strcmp(rootdir, ".") ? rootdir : get_current_dir_name(), address, port,
+			SELF, backlog, logfile ? logfile : "none", debug ? "on" : "off",
 			getpid(), isdaemon ? "(daemon)" : "(foreground)");
 
 	sock_fd = socket(PF_INET, SOCK_STREAM, 0);

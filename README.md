@@ -13,6 +13,7 @@ USAGE: lws [option [argument]]...
    -l, --logfile [<logfile>]  logfile location (default lws.log)
    -d, --debug                extra output for debugging (default off)
    -f, --foreground           no forking to the background
+   -k, --killall              kill all running instances
    -h, --help                 display this help text
 ```
 
