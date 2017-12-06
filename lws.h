@@ -47,7 +47,7 @@ Content-type: application/*\r\n\
 Content-Length: %d\r\n\r\n"
 
 #define CSS "body{font-family:Arial,sans-serif; background-color:#eee;} \
-.foot{font-size:80%%; color:#666; margin: 4px 0 600px;} \
+.foot{font-style:italic; font-size:70%%; color:#666; margin: 4px 0 600px;} \
 a,a:active{text-decoration:none; color:#116;} \
 a:visited{color:#416;} \
 a:hover,a:focus{text-decoration:none;} \
@@ -79,9 +79,9 @@ td a:hover{background-color:#ffd;} \
 <meta http-equiv=\"Content-Type\" content=\"text/html;charset=utf-8\">\
 <style>" CSS "</style><title>" SELF
 
-#define BODY2 "</title></head>\n<body><a href=\"//%s:%s\" title=\"root directory\"><h1>" SELF
+#define BODY2 "</title></head>\n<body><a href=\"//%s:%s\" title=\"root directory\"><h1>"
 
-#define DIV1 " <span class=\"g\">%s</span></h1></a><div class=\"list\">\n"
+#define DIV1 "root <span class=\"g\">%s</span></h1></a><div class=\"list\">\n"
 
 #define FOOTER "</div><a href=\"" URL "\" title=\"" SELF \
 " github page\" target=\"_blank\"><p class=\"foot\">" SELF TAGLINE "</p></a></body></html>"
